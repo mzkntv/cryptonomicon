@@ -1,6 +1,42 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
-    <div class="container">
+    <div
+      v-if="loading"
+      class="
+        fixed
+        w-100
+        h-100
+        opacity-80
+        bg-purple-800
+        inset-0
+        z-50
+        flex
+        items-center
+        justify-center
+      "
+    >
+      <svg
+        class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+    <div class="container" v-else>
       <div class="w-full my-4"></div>
       <section>
         <div class="flex">
@@ -30,6 +66,28 @@
                 placeholder="Например DOGE"
               />
             </div>
+            <div class="flex bg-white p-1 rounded-md shadow-md flex-wrap">
+              <span
+                v-for="badge in filteredCoinList"
+                :key="badge.Id"
+                @click="addHandler(badge.Symbol)"
+                class="
+                  inline-flex
+                  items-center
+                  px-2
+                  m-1
+                  rounded-md
+                  text-xs
+                  font-medium
+                  bg-gray-300
+                  text-gray-800
+                  cursor-pointer
+                "
+              >
+                {{ badge.Symbol }}
+              </span>
+            </div>
+            <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
           </div>
         </div>
         <button
@@ -187,19 +245,39 @@ export default {
   name: "App",
   data() {
     return {
-      ticker: "default",
+      ticker: "",
       tickers: [],
+      coinList: [],
       sel: null,
       graph: [],
+      loading: true,
     };
   },
+  computed: {
+    filteredCoinList() {
+      return Object.values(this.coinList)
+        .filter(
+          (el) =>
+            ~el.Symbol.indexOf(this.ticker) || ~el.FullName.indexOf(this.ticker)
+        )
+        .slice(0, 4);
+    },
+  },
+  async mounted() {
+    const f = await fetch(
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+    );
+    const data = await f.json();
+    this.coinList = data.Data;
+    this.loading = false;
+    console.log(this.coinList);
+  },
   methods: {
-    addHandler() {
+    addHandler(name) {
       const currentTicker = {
-        name: this.ticker,
+        name: name || this.ticker,
         price: "-",
       };
-
       this.tickers.push(currentTicker);
       setInterval(async () => {
         const f = await fetch(
